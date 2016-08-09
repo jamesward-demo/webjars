@@ -12,16 +12,13 @@ import play.api.mvc.Results.EmptyContent
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class BinTray @Inject() (ws: WSAPI, config: Configuration, git: Git, licenseDetector: LicenseDetector) (implicit ec: ExecutionContext) {
+class BinTray @Inject() (ws: WSAPI, config: Configuration, git: Git, licenseDetector: LicenseDetector, mavenCentral: MavenCentral) (implicit ec: ExecutionContext) {
 
   val BASE_URL = "https://bintray.com/api/v1"
 
   lazy val username = config.getString("bintray.username").get
   lazy val password = config.getString("bintray.password").get
   lazy val gpgPassphrase = config.getString("bintray.gpg.passphrase").get
-
-  lazy val ossUsername = config.getString("oss.username").get
-  lazy val ossPassword = config.getString("oss.password").get
 
 
   def ws(path: String): WSRequest = {
@@ -134,8 +131,8 @@ class BinTray @Inject() (ws: WSAPI, config: Configuration, git: Git, licenseDete
   def syncToMavenCentral(subject: String, repo: String, packageName: String, version:String): Future[JsValue] = {
 
     val json = Json.obj(
-      "username" -> ossUsername,
-      "password" -> ossPassword
+      "username" -> mavenCentral.ossUsername,
+      "password" -> mavenCentral.ossPassword
     )
 
     ws(s"/maven_central_sync/$subject/$repo/$packageName/versions/$version").post(json).flatMap { response =>
